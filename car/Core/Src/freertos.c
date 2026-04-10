@@ -38,8 +38,9 @@ volatile uint16_t g_vision_smooth_trigger = 550U;
 volatile uint16_t g_vision_decision_trigger = 600U;
 volatile uint16_t g_push_distance_divisor = 2U;
 volatile uint16_t g_push_distance_min_mm = 50U;
-volatile uint16_t g_servo_open_angle = 31U;
+volatile uint16_t g_servo_open_angle = 120U;
 volatile uint16_t g_servo_close_angle = 165U;
+volatile uint16_t g_total_strafe_limit_mm = 8000U;
 /*
  * g_vision_detect_min_count:
  *   1 = 更灵敏，更容易触发；2 = 默认；3 = 更稳，但更容易错过
@@ -52,6 +53,8 @@ volatile uint16_t g_servo_close_angle = 165U;
  *   推出距离下限，避免一半后太短
  * g_servo_open_angle / g_servo_close_angle:
  *   爪子张开/闭合角度；当前把 open 从 32 下调到 31，减少释放后卡住风险
+ * g_total_strafe_limit_mm:
+ *   一轮流程结束后继续左移重复执行，累计左移到这个上限后停止
  */
 /* USER CODE END PTD */
 
@@ -75,8 +78,8 @@ volatile uint16_t g_servo_close_angle = 165U;
 
 #define VISION_NEAR_SMOOTH         750U
 #define VISION_MID_SMOOTH          600U
-#define VISION_NEAR_TRAVEL_MM     2800U
-#define VISION_MID_TRAVEL_MM      3400U
+#define VISION_NEAR_TRAVEL_MM     3000U
+#define VISION_MID_TRAVEL_MM      3600U
 
 #define ROBOT_SM_TEST_COMM    0
 #define ROBOT_SM_TEST_SENSOR  1  //测试：1  启用：0
@@ -84,7 +87,7 @@ volatile uint16_t g_servo_close_angle = 165U;
 #define ROBOT_SM_TEST_IMU     0
 #define ROBOT_SM_DEBUG_PRINT  1
 
-#define BOOT_LIGHT_WAIT_MS        4000U
+#define BOOT_LIGHT_WAIT_MS        4200U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -110,6 +113,8 @@ volatile uint16_t g_vision_raw = 0;
 volatile uint16_t g_vision_decision = 0;
 volatile uint16_t g_target_forward_mm = 0;
 volatile uint16_t g_forward_progress_mm = 0;
+volatile uint16_t g_strafe_progress_mm = 0;
+volatile uint16_t g_total_strafe_mm = 0;
 volatile CloseReason_t g_close_reason = CLOSE_REASON_NONE;
 
 volatile uint8_t g_bumper_left = 0;
@@ -129,6 +134,9 @@ volatile ServoCmd_t g_servo_cmd = SERVO_CMD_NONE;
 volatile uint8_t g_servo_busy = 0;
 
 static uint32_t s_forward_encoder_accum = 0;
+static uint32_t s_strafe_encoder_accum = 0;
+static uint8_t s_strafe_tracking_active = 0U;
+static uint8_t s_strafe_cycle_done = 0U;
 static uint8_t s_vision_rx_buf[VISION_RX_BUF_SIZE];
 static volatile uint16_t s_vision_rx_size = 0;
 static volatile uint8_t s_vision_rx_ready = 0;
@@ -152,8 +160,10 @@ static uint8_t RobotNeedLight(void);
 static uint32_t Robot_AbsS32(int32_t value);
 static void Robot_ClearFrontSwitchLatch(void);
 static void Robot_ResetForwardProgress(void);
+static void Robot_ResetStrafeProgress(void);
 static void Robot_UpdateEncoderSnapshot(void);
 static void Robot_UpdateForwardProgress(void);
+static void Robot_UpdateStrafeProgress(void);
 static void Robot_VisionRxStart(void);
 __weak void Robot_VisionProtocol_Poll(void);
 static uint8_t Robot_ParseVisionScore(const char *token, uint16_t *out_value);
@@ -258,10 +268,13 @@ void StartMotorTask(void const * argument)
       Chassis_Stop();
       Robot_ClearFrontSwitchLatch();
       Robot_ResetForwardProgress();
+      Robot_ResetStrafeProgress();
       g_target_forward_mm = 0;
       g_close_reason = CLOSE_REASON_NONE;
       g_exit_confirmed = 0U;
       g_top_inside_ref = 0U;
+      g_total_strafe_mm = 0U;
+      s_strafe_cycle_done = 0U;
       g_servo_cmd = SERVO_CMD_OPEN;
     }
 
@@ -275,15 +288,30 @@ void StartMotorTask(void const * argument)
 
       /* 搜索目标：持续左移，直到视觉稳定识别 */
       case STATE_SEARCH_STRAFE:
-        Chassis_RunStrafeLeftPID(SEARCH_SPEED);
-        if (VisionDetectedStable() != 0U)
+        if (entered != 0U)
+        {
+          Robot_ResetStrafeProgress();
+          s_strafe_cycle_done = 0U;
+        }
+
+        if (g_total_strafe_mm >= g_total_strafe_limit_mm)
         {
           Chassis_Stop();
-          EnterState(STATE_LOCK_TARGET);
+          EnterState(STATE_DONE);
         }
-        else if (StateTimedOut(SEARCH_TIMEOUT_MS) != 0U)
+        else
         {
-          EnterState(STATE_ERROR);
+          Chassis_RunStrafeLeftPID(SEARCH_SPEED);
+          if (VisionDetectedStable() != 0U)
+          {
+            Chassis_Stop();
+            s_strafe_cycle_done = 1U;
+            EnterState(STATE_LOCK_TARGET);
+          }
+          else if (StateTimedOut(SEARCH_TIMEOUT_MS) != 0U)
+          {
+            EnterState(STATE_ERROR);
+          }
         }
         break;
 
@@ -434,7 +462,15 @@ void StartMotorTask(void const * argument)
         }
         if (Chassis_RunTurnLeft180() != 0U)
         {
-          EnterState(STATE_DONE);
+          if ((s_strafe_cycle_done != 0U) &&
+              (g_total_strafe_mm < g_total_strafe_limit_mm))
+          {
+            EnterState(STATE_SEARCH_STRAFE);
+          }
+          else
+          {
+            EnterState(STATE_DONE);
+          }
         }
         else if (StateTimedOut(TURN_TIMEOUT_MS) != 0U)
         {
@@ -478,6 +514,7 @@ void StartMotorTask(void const * argument)
     {
       Robot_UpdateEncoderSnapshot();
       Robot_UpdateForwardProgress();
+      Robot_UpdateStrafeProgress();
 
       if ((g_robot_state == STATE_SEARCH_STRAFE)
   &&
@@ -914,6 +951,12 @@ static void Robot_ResetForwardProgress(void)
   g_forward_progress_mm = 0U;
 }
 
+static void Robot_ResetStrafeProgress(void)
+{
+  s_strafe_encoder_accum = 0U;
+  g_strafe_progress_mm = 0U;
+}
+
 static void Robot_UpdateEncoderSnapshot(void)
 {
   g_enc1 = -Read_Encoder_TIM2();
@@ -941,6 +984,32 @@ static void Robot_UpdateForwardProgress(void)
 
   s_forward_encoder_accum += avg_abs_count;
   g_forward_progress_mm = (uint16_t)((float)s_forward_encoder_accum * ENCODER_MM_PER_COUNT);
+}
+
+static void Robot_UpdateStrafeProgress(void)
+{
+  uint32_t avg_abs_count;
+
+  if (g_robot_state != STATE_SEARCH_STRAFE)
+  {
+    s_strafe_tracking_active = 0U;
+    return;
+  }
+
+  avg_abs_count = (Robot_AbsS32(g_enc1) +
+                   Robot_AbsS32(g_enc2) +
+                   Robot_AbsS32(g_enc3) +
+                   Robot_AbsS32(g_enc4)) / 4U;
+
+  if (s_strafe_tracking_active == 0U)
+  {
+    s_strafe_tracking_active = 1U;
+    return;
+  }
+
+  s_strafe_encoder_accum += avg_abs_count;
+  g_strafe_progress_mm = (uint16_t)((float)s_strafe_encoder_accum * ENCODER_MM_PER_COUNT);
+  g_total_strafe_mm = (uint16_t)(g_total_strafe_mm + (uint16_t)((float)avg_abs_count * ENCODER_MM_PER_COUNT));
 }
 
 static void Robot_VisionRxStart(void)

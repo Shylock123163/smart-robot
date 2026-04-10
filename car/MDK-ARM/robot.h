@@ -38,6 +38,7 @@ extern volatile uint16_t     g_push_distance_min_mm;
 extern volatile uint16_t     g_servo_open_angle;
 extern volatile uint16_t     g_servo_close_angle;
 extern volatile uint16_t     g_total_strafe_limit_mm;
+extern volatile uint16_t     g_search_rearm_strafe_mm;
 extern volatile uint16_t     g_strafe_progress_mm;
 extern volatile uint16_t     g_total_strafe_mm;
 extern volatile RobotState_t g_robot_state;

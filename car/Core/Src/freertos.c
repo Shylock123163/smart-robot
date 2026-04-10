@@ -41,6 +41,7 @@ volatile uint16_t g_push_distance_min_mm = 50U;
 volatile uint16_t g_servo_open_angle = 120U;
 volatile uint16_t g_servo_close_angle = 165U;
 volatile uint16_t g_total_strafe_limit_mm = 8000U;
+volatile uint16_t g_search_rearm_strafe_mm = 300U;
 /*
  * g_vision_detect_min_count:
  *   1 = 更灵敏，更容易触发；2 = 默认；3 = 更稳，但更容易错过
@@ -55,6 +56,8 @@ volatile uint16_t g_total_strafe_limit_mm = 8000U;
  *   爪子张开/闭合角度；当前把 open 从 32 下调到 31，减少释放后卡住风险
  * g_total_strafe_limit_mm:
  *   一轮流程结束后继续左移重复执行，累计左移到这个上限后停止
+ * g_search_rearm_strafe_mm:
+ *   每轮重新搜索时，至少先左移这段距离后才允许再次识别，避免回正后立刻又前进
  */
 /* USER CODE END PTD */
 
@@ -292,6 +295,7 @@ void StartMotorTask(void const * argument)
         {
           Robot_ResetStrafeProgress();
           s_strafe_cycle_done = 0U;
+          Robot_ResetVisionData();
         }
 
         if (g_total_strafe_mm >= g_total_strafe_limit_mm)
@@ -302,7 +306,8 @@ void StartMotorTask(void const * argument)
         else
         {
           Chassis_RunStrafeLeftPID(SEARCH_SPEED);
-          if (VisionDetectedStable() != 0U)
+          if ((g_strafe_progress_mm >= g_search_rearm_strafe_mm) &&
+              (VisionDetectedStable() != 0U))
           {
             Chassis_Stop();
             s_strafe_cycle_done = 1U;
@@ -465,6 +470,7 @@ void StartMotorTask(void const * argument)
           if ((s_strafe_cycle_done != 0U) &&
               (g_total_strafe_mm < g_total_strafe_limit_mm))
           {
+            Robot_ResetVisionData();
             EnterState(STATE_SEARCH_STRAFE);
           }
           else

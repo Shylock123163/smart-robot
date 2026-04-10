@@ -32,16 +32,16 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* 比赛调参接口：舵机和串口/视觉参数放最前面，比赛时优先改这里 */
-volatile uint16_t g_vision_detect_min_count = 2U;
-volatile uint16_t g_vision_raw_trigger = 380U;
-volatile uint16_t g_vision_smooth_trigger = 550U;
-volatile uint16_t g_vision_decision_trigger = 600U;
+volatile uint16_t g_vision_detect_min_count = 1U;
+volatile uint16_t g_vision_raw_trigger = 320U;
+volatile uint16_t g_vision_smooth_trigger = 500U;
+volatile uint16_t g_vision_decision_trigger = 500U;
 volatile uint16_t g_push_distance_divisor = 2U;
 volatile uint16_t g_push_distance_min_mm = 50U;
 volatile uint16_t g_servo_open_angle = 120U;
 volatile uint16_t g_servo_close_angle = 165U;
-volatile uint16_t g_total_strafe_limit_mm = 8000U;
-volatile uint16_t g_search_rearm_strafe_mm = 300U;
+volatile uint16_t g_total_strafe_limit_mm = 4200U;
+volatile uint16_t g_search_rearm_strafe_mm = 50U;
 /*
  * g_vision_detect_min_count:
  *   1 = 更灵敏，更容易触发；2 = 默认；3 = 更稳，但更容易错过

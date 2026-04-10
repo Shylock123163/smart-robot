@@ -1,0 +1,62 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.venv/
+**/venv/
+**/env/
+
+# Logs / runtime artifacts
+**/logs/
+**/*.log
+**/*.tmp
+**/*.bak
+
+# Images / videos / raw captures generated during testing
+**/*.raw
+**/*.jpg
+**/*.jpeg
+**/*.png
+**/*.bmp
+**/*.mp4
+**/*.avi
+**/*.mkv
+**/*.h264
+
+# Embedded / Keil build outputs
+**/Debug/
+**/Release/
+**/build/
+**/dist/
+**/*.o
+**/*.obj
+**/*.d
+**/*.axf
+**/*.elf
+**/*.map
+**/*.lst
+**/*.dep
+**/*.crf
+**/*.lnp
+**/*.htm
+**/*.build_log.htm
+**/*.hex
+**/*.bin
+**/*.uvoptx
+**/*.uvguix.*
+
+# Local config / Claude files
+.claudesignore
+CLAUDE.md
+1.txt
+
+# Large local model/training artifacts not needed in git
+**/*.pt

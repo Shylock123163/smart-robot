@@ -32,32 +32,44 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 /* 比赛调参接口：舵机和串口/视觉参数放最前面，比赛时优先改这里 */
-volatile uint16_t g_vision_detect_min_count = 1U;
-volatile uint16_t g_vision_raw_trigger = 320U;
-volatile uint16_t g_vision_smooth_trigger = 500U;
-volatile uint16_t g_vision_decision_trigger = 500U;
+volatile uint16_t g_vision_detect_min_count = 5U;
+volatile uint16_t g_vision_raw_trigger = 0U;
+volatile uint16_t g_vision_smooth_trigger = 0U;
+volatile uint16_t g_vision_decision_trigger = 0U;
 volatile uint16_t g_push_distance_divisor = 2U;
 volatile uint16_t g_push_distance_min_mm = 50U;
 volatile uint16_t g_servo_open_angle = 120U;
 volatile uint16_t g_servo_close_angle = 165U;
 volatile uint16_t g_total_strafe_limit_mm = 4200U;
-volatile uint16_t g_search_rearm_strafe_mm = 50U;
+volatile uint16_t g_search_rearm_strafe_mm = 0U;
+volatile uint16_t g_search_first_min_strafe_mm = 120U;
+volatile uint16_t g_search_cycle_min_strafe_mm = 40U;
+volatile uint16_t g_vision_burst_need_count = 5U;
+volatile uint16_t g_vision_burst_window_ms = 180U;
 /*
  * g_vision_detect_min_count:
  *   1 = 更灵敏，更容易触发；2 = 默认；3 = 更稳，但更容易错过
  * g_vision_raw_trigger / g_vision_smooth_trigger / g_vision_decision_trigger:
  *   数值越小越松，越大越严
- *   推荐先调 detect_min_count，再调 decision_trigger，最后微调 raw/smooth
+ *   当前这一版已主动放宽，优先让 STM32 更快接受鲁班猫已判定的目标
  * g_push_distance_divisor:
  *   推出距离 = 本次抓取前进距离 / divisor，默认 2 表示一半
  * g_push_distance_min_mm:
  *   推出距离下限，避免一半后太短
  * g_servo_open_angle / g_servo_close_angle:
- *   爪子张开/闭合角度；当前把 open 从 32 下调到 31，减少释放后卡住风险
+ *   爪子张开/闭合角度
  * g_total_strafe_limit_mm:
  *   一轮流程结束后继续左移重复执行，累计左移到这个上限后停止
  * g_search_rearm_strafe_mm:
- *   每轮重新搜索时，至少先左移这段距离后才允许再次识别，避免回正后立刻又前进
+ *   每轮重新搜索时，至少先左移这段距离后才允许再次识别；当前设为 0，避免看到了还被强制滑过去
+ * g_search_first_min_strafe_mm:
+ *   首轮搜索最少先左移的距离，避免上电刚开始就立刻执行
+ * g_search_cycle_min_strafe_mm:
+ *   回环后每轮重新搜索最少先左移的距离，避免刚回正就立刻吃到残留视野
+ * g_vision_burst_need_count:
+ *   STM32 在短窗口内累计收到多少次有效视觉命中后才触发动作
+ * g_vision_burst_window_ms:
+ *   累计视觉命中的时间窗口，配合鲁班猫 burst 连发使用
  */
 /* USER CODE END PTD */
 
@@ -83,6 +95,8 @@ volatile uint16_t g_search_rearm_strafe_mm = 50U;
 #define VISION_MID_SMOOTH          600U
 #define VISION_NEAR_TRAVEL_MM     3000U
 #define VISION_MID_TRAVEL_MM      3600U
+#define VISION_FRAME_FRESH_MS      250U
+#define SEARCH_ENTRY_VISION_GRACE_MS 2500U
 
 #define ROBOT_SM_TEST_COMM    0
 #define ROBOT_SM_TEST_SENSOR  1  //测试：1  启用：0
@@ -140,9 +154,18 @@ static uint32_t s_forward_encoder_accum = 0;
 static uint32_t s_strafe_encoder_accum = 0;
 static uint8_t s_strafe_tracking_active = 0U;
 static uint8_t s_strafe_cycle_done = 0U;
+static uint8_t s_search_require_new_frame = 1U;
+static uint8_t s_search_is_first_cycle = 1U;
 static uint8_t s_vision_rx_buf[VISION_RX_BUF_SIZE];
 static volatile uint16_t s_vision_rx_size = 0;
 static volatile uint8_t s_vision_rx_ready = 0;
+static volatile uint32_t s_vision_frame_seq = 0U;
+static uint32_t s_search_start_vision_seq = 0U;
+static uint32_t s_search_start_tick = 0U;
+static volatile uint32_t s_last_vision_rx_tick = 0U;
+static volatile uint32_t s_uart3_rx_irq_count = 0U;
+static uint8_t s_detect_count = 0U;
+static uint32_t s_detect_window_start_tick = 0U;
 /* USER CODE END Variables */
 osThreadId MotorTaskHandle;
 osThreadId EncoderTaskHandle;
@@ -164,6 +187,7 @@ static uint32_t Robot_AbsS32(int32_t value);
 static void Robot_ClearFrontSwitchLatch(void);
 static void Robot_ResetForwardProgress(void);
 static void Robot_ResetStrafeProgress(void);
+static void Robot_MarkSearchVisionBoundary(void);
 static void Robot_UpdateEncoderSnapshot(void);
 static void Robot_UpdateForwardProgress(void);
 static void Robot_UpdateStrafeProgress(void);
@@ -272,6 +296,9 @@ void StartMotorTask(void const * argument)
       Robot_ClearFrontSwitchLatch();
       Robot_ResetForwardProgress();
       Robot_ResetStrafeProgress();
+      Robot_ResetVisionData();
+      s_search_require_new_frame = 1U;
+      s_search_is_first_cycle = 1U;
       g_target_forward_mm = 0;
       g_close_reason = CLOSE_REASON_NONE;
       g_exit_confirmed = 0U;
@@ -295,7 +322,17 @@ void StartMotorTask(void const * argument)
         {
           Robot_ResetStrafeProgress();
           s_strafe_cycle_done = 0U;
-          Robot_ResetVisionData();
+          if (s_search_require_new_frame != 0U)
+          {
+            s_search_start_vision_seq = s_vision_frame_seq;
+            s_search_start_tick = HAL_GetTick();
+          }
+          else
+          {
+            Robot_MarkSearchVisionBoundary();
+          }
+          s_detect_count = 0U;
+          s_detect_window_start_tick = 0U;
         }
 
         if (g_total_strafe_mm >= g_total_strafe_limit_mm)
@@ -305,12 +342,17 @@ void StartMotorTask(void const * argument)
         }
         else
         {
+          uint16_t min_strafe_mm = (s_search_is_first_cycle != 0U) ?
+                                   g_search_first_min_strafe_mm :
+                                   g_search_cycle_min_strafe_mm;
           Chassis_RunStrafeLeftPID(SEARCH_SPEED);
-          if ((g_strafe_progress_mm >= g_search_rearm_strafe_mm) &&
+          if ((g_strafe_progress_mm >= min_strafe_mm) &&
+              (g_strafe_progress_mm >= g_search_rearm_strafe_mm) &&
               (VisionDetectedStable() != 0U))
           {
             Chassis_Stop();
             s_strafe_cycle_done = 1U;
+            s_search_is_first_cycle = 0U;
             EnterState(STATE_LOCK_TARGET);
           }
           else if (StateTimedOut(SEARCH_TIMEOUT_MS) != 0U)
@@ -395,8 +437,6 @@ void StartMotorTask(void const * argument)
       /* 退出后退：按与前进相同的固定距离直线后退，并直接按编码器里程结束 */
       case STATE_EXIT_STRAIGHT:
         g_exit_confirmed = (g_forward_progress_mm >= g_target_forward_mm) ? 1U : 0U;
-        printf("[EXIT] progress=%u target=%u confirm=%u\r\n",
-               g_forward_progress_mm, g_target_forward_mm, g_exit_confirmed);
         Chassis_RunStraightPID(BACKOUT_SPEED);
 
         if (g_forward_progress_mm >= g_target_forward_mm)
@@ -470,7 +510,8 @@ void StartMotorTask(void const * argument)
           if ((s_strafe_cycle_done != 0U) &&
               (g_total_strafe_mm < g_total_strafe_limit_mm))
           {
-            Robot_ResetVisionData();
+            s_search_require_new_frame = 0U;
+            s_search_start_tick = HAL_GetTick();
             EnterState(STATE_SEARCH_STRAFE);
           }
           else
@@ -556,7 +597,6 @@ void StartIMUTask(void const * argument)
 	for (;;)
   {
     HWT101_GetValue();
-	printf("[IMU] yaw=%.2f\r\n", fAngle[2]);
     osDelay(10);
   }
 #endif
@@ -836,14 +876,73 @@ void StartLedTask(void const * argument)
 /* USER CODE BEGIN Application */
 static uint8_t VisionDetectedStable(void)
 {
-  static uint8_t detect_count = 0;
   static uint32_t last_print_tick = 0U;
   uint8_t vision_hit;
+  uint32_t now_tick;
+  uint32_t frame_age_ms;
 
   if (g_robot_state != STATE_SEARCH_STRAFE)
   {
-    detect_count = 0;
+    s_detect_count = 0U;
+    s_detect_window_start_tick = 0U;
     last_print_tick = 0U;
+    return 0U;
+  }
+
+  now_tick = HAL_GetTick();
+  frame_age_ms = now_tick - s_last_vision_rx_tick;
+
+  if ((s_search_start_vision_seq == 0U) && (s_vision_frame_seq == 0U))
+  {
+    s_detect_count = 0U;
+    s_detect_window_start_tick = 0U;
+#if ROBOT_SM_DEBUG_PRINT
+    if ((now_tick - last_print_tick) >= 100U)
+    {
+      last_print_tick = now_tick;
+      printf("[VISION] waiting_first_frame\r\n");
+    }
+#endif
+    return 0U;
+  }
+
+  if (s_search_require_new_frame != 0U)
+  {
+    if (s_vision_frame_seq <= s_search_start_vision_seq)
+    {
+      s_detect_count = 0U;
+      s_detect_window_start_tick = 0U;
+#if ROBOT_SM_DEBUG_PRINT
+      if ((now_tick - last_print_tick) >= 100U)
+      {
+        last_print_tick = now_tick;
+        printf("[VISION] waiting_new_frame seq=%lu start=%lu\r\n",
+               (unsigned long)s_vision_frame_seq,
+               (unsigned long)s_search_start_vision_seq);
+      }
+#endif
+      return 0U;
+    }
+
+    s_search_require_new_frame = 0U;
+  }
+  else if ((s_last_vision_rx_tick == 0U) ||
+           ((frame_age_ms > VISION_FRAME_FRESH_MS) &&
+            ((now_tick - s_search_start_tick) > SEARCH_ENTRY_VISION_GRACE_MS)))
+  {
+    s_detect_count = 0U;
+    s_detect_window_start_tick = 0U;
+#if ROBOT_SM_DEBUG_PRINT
+    if ((now_tick - last_print_tick) >= 100U)
+    {
+      last_print_tick = now_tick;
+      printf("[VISION] waiting_fresh_frame age=%lu search_age=%lu seq=%lu start=%lu\r\n",
+             (unsigned long)frame_age_ms,
+             (unsigned long)(now_tick - s_search_start_tick),
+             (unsigned long)s_vision_frame_seq,
+             (unsigned long)s_search_start_vision_seq);
+    }
+#endif
     return 0U;
   }
 
@@ -854,32 +953,40 @@ static uint8_t VisionDetectedStable(void)
 
   if (vision_hit != 0U)
   {
-    if (detect_count < 255U)
+    if ((s_detect_window_start_tick == 0U) ||
+        ((now_tick - s_detect_window_start_tick) > g_vision_burst_window_ms))
     {
-      detect_count++;
+      s_detect_window_start_tick = now_tick;
+      s_detect_count = 1U;
+    }
+    else if (s_detect_count < 255U)
+    {
+      s_detect_count++;
     }
   }
   else
   {
-    detect_count = 0;
+    s_detect_count = 0U;
+    s_detect_window_start_tick = 0U;
   }
 
 #if ROBOT_SM_DEBUG_PRINT
   if ((HAL_GetTick() - last_print_tick) >= 100U)
   {
     last_print_tick = HAL_GetTick();
-    printf("[VISION] det=%u smooth=%u raw=%u dec=%u hit=%u cnt=%u/%u\r\n",
+    printf("[VISION] det=%u smooth=%u raw=%u dec=%u hit=%u cnt=%u/%u win=%lu\r\n",
            g_vision_detected,
            g_vision_smooth,
            g_vision_raw,
            g_vision_decision,
            vision_hit,
-           detect_count,
-           g_vision_detect_min_count);
+           s_detect_count,
+           g_vision_burst_need_count,
+           (unsigned long)((s_detect_window_start_tick == 0U) ? 0U : (now_tick - s_detect_window_start_tick)));
   }
 #endif
 
-  return (detect_count >= g_vision_detect_min_count) ? 1U : 0U;
+  return (s_detect_count >= g_vision_burst_need_count) ? 1U : 0U;
 }
 
 static uint16_t Robot_EstimateForwardMm(void)
@@ -963,6 +1070,12 @@ static void Robot_ResetStrafeProgress(void)
   g_strafe_progress_mm = 0U;
 }
 
+static void Robot_MarkSearchVisionBoundary(void)
+{
+  s_search_start_vision_seq = s_vision_frame_seq;
+  s_search_start_tick = HAL_GetTick();
+}
+
 static void Robot_UpdateEncoderSnapshot(void)
 {
   g_enc1 = -Read_Encoder_TIM2();
@@ -1020,6 +1133,8 @@ static void Robot_UpdateStrafeProgress(void)
 
 static void Robot_VisionRxStart(void)
 {
+  HAL_StatusTypeDef rx_status;
+
   s_vision_rx_ready = 0U;
   s_vision_rx_size = 0U;
 
@@ -1031,7 +1146,16 @@ static void Robot_VisionRxStart(void)
   huart3.ReceptionType = HAL_UART_RECEPTION_STANDARD;
   huart3.RxState = HAL_UART_STATE_READY;
 
-  HAL_UARTEx_ReceiveToIdle_IT(&huart3, s_vision_rx_buf, VISION_RX_BUF_SIZE);
+  rx_status = HAL_UARTEx_ReceiveToIdle_IT(&huart3, s_vision_rx_buf, VISION_RX_BUF_SIZE);
+
+#if ROBOT_SM_DEBUG_PRINT
+  printf("[UART3_ARM] status=%d rx_ready=%u rx_size=%u irq_cnt=%lu err=0x%08lx\r\n",
+         rx_status,
+         s_vision_rx_ready,
+         s_vision_rx_size,
+         (unsigned long)s_uart3_rx_irq_count,
+         (unsigned long)huart3.ErrorCode);
+#endif
 }
 
 static uint8_t Robot_ParseVisionScore(const char *token, uint16_t *out_value)
@@ -1071,6 +1195,9 @@ static void Robot_ResetVisionData(void)
   g_vision_smooth = 0U;
   g_vision_raw = 0U;
   g_vision_decision = 0U;
+  s_last_vision_rx_tick = 0U;
+  s_detect_count = 0U;
+  s_detect_window_start_tick = 0U;
 }
 
 static void EnterState(RobotState_t next_state)
@@ -1214,9 +1341,12 @@ void Robot_VisionProtocol_Poll(void)
   g_vision_raw = raw;
   g_vision_decision = decision;
   g_vision_distance = (clutter_flag != 0U) ? Robot_EstimateForwardMm() : 0U;
+  s_vision_frame_seq++;
+  s_last_vision_rx_tick = HAL_GetTick();
 
 #if ROBOT_SM_DEBUG_PRINT
-  printf("[VISION_RX] flag=%u smooth=%u raw=%u dec=%u dist=%u\r\n",
+  printf("[VISION_RX] seq=%lu flag=%u smooth=%u raw=%u dec=%u dist=%u\r\n",
+         (unsigned long)s_vision_frame_seq,
          g_vision_detected,
          g_vision_smooth,
          g_vision_raw,
@@ -1347,13 +1477,18 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
   if (huart->Instance == USART3)
   {
+    s_uart3_rx_irq_count++;
+
     if (Size > VISION_RX_BUF_SIZE)
     {
       Size = VISION_RX_BUF_SIZE;
     }
 
 #if ROBOT_SM_DEBUG_PRINT
-    printf("[UART3_IRQ] size=%u\r\n", Size);
+    printf("[UART3_IRQ] cnt=%lu size=%u err=0x%08lx\r\n",
+           (unsigned long)s_uart3_rx_irq_count,
+           Size,
+           (unsigned long)huart3.ErrorCode);
 #endif
 
     s_vision_rx_size = Size;

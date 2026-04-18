@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Cpu, GripVertical, Radio, Camera, Wifi, Battery, VideoOff } from 'lucide-react';
 import { useRobotStore } from '@/stores/robotStore';
 import { useOpenClawStatus } from '@/app/hooks/useOpenClawStatus';
-import { ScenePanel } from '@/app/components/ScenePanel';
+import { SlamMapPanel } from '@/app/components/SlamMapPanel';
 import '@/styles/monitor.css';
 
 const modules = [
@@ -79,11 +79,11 @@ export function MonitorPage() {
         <div className="monitor-header">{modules.find(m => m.id === active)?.label} 状态</div>
         <div className="monitor-views">
           <div className="monitor-camera">
-            <div className="camera-label"><Camera size={14} /> 摄像头图传</div>
+            <div className="camera-label"><Camera size={14} /> 摄像头 1</div>
             <div className="camera-feed">
               <video
                 className="camera-video"
-                src={`${import.meta.env.BASE_URL}demo-feed.mp4`}
+                src={`${import.meta.env.BASE_URL}camera-feed-1.mp4`}
                 autoPlay
                 loop
                 muted
@@ -95,9 +95,26 @@ export function MonitorPage() {
               </div>
             </div>
           </div>
-          <div className="monitor-scene">
-            <ScenePanel />
+          <div className="monitor-camera">
+            <div className="camera-label"><Camera size={14} /> 摄像头 2</div>
+            <div className="camera-feed">
+              <video
+                className="camera-video"
+                src={`${import.meta.env.BASE_URL}camera-feed-2.mp4`}
+                autoPlay
+                loop
+                muted
+                playsInline
+              />
+              <div className="camera-overlay">
+                <VideoOff size={32} />
+                <span>等待视频源接入</span>
+              </div>
+            </div>
           </div>
+        </div>
+        <div className="monitor-scene">
+          <SlamMapPanel />
         </div>
         <div className="monitor-detail">
           <table className="status-table">

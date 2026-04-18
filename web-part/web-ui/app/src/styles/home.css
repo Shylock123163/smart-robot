@@ -1,0 +1,242 @@
+/* === Home Page (from template index.html parallax layout) === */
+.home { padding-top: var(--nav-h); }
+
+/* Parallax Section */
+.parallax-section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
+}
+
+.parallax-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  z-index: 0;
+}
+
+.parallax-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+}
+
+.parallax-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 60px 48px;
+}
+
+/* Hero Section */
+.hero-title {
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  background: url('/sr/robot.jpg') center/cover;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  margin-top: 20px;
+  font-size: 18px;
+  color: rgba(234,234,239,0.7);
+  max-width: 600px;
+}
+
+.hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 24px;
+}
+
+/* Feature Cards Grid */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+}
+
+.feature-card {
+  padding: 28px 24px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  backdrop-filter: var(--blur);
+  border: 1px solid rgba(234,234,239,0.08);
+  text-align: center;
+  transition: var(--transition);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: rgba(234,234,239,0.18);
+}
+
+.feature-card svg {
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.feature-card h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 13px;
+  color: rgba(234,234,239,0.55);
+}
+
+/* 3D Flip Card (from template .amiya/.kaierxi) */
+.flip-container {
+  perspective: 1000px;
+  width: 320px;
+  height: 420px;
+}
+
+.flip-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flip-container:hover .flip-card {
+  transform: rotateY(180deg);
+}
+
+.flip-front,
+.flip-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid rgba(234,234,239,0.1);
+}
+
+.flip-front {
+  background: var(--bg);
+  backdrop-filter: var(--blur);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.flip-front img {
+  width: 80%;
+  border-radius: var(--radius);
+}
+
+.flip-back {
+  background: var(--bg);
+  backdrop-filter: var(--blur);
+  transform: rotateY(180deg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.flip-back h3 { font-size: 20px; }
+.flip-back p { font-size: 13px; color: rgba(234,234,239,0.7); line-height: 1.7; }
+
+/* Rotating Ring (from template .main4) */
+.ring-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+}
+
+.ring-wrap {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  display: grid;
+  place-items: center;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(234,234,239,0.15);
+  border-radius: 50%;
+}
+
+.ring:nth-child(1) { animation: ring-rotate1 8s linear infinite; }
+.ring:nth-child(2) { animation: ring-rotate2 10s linear infinite; inset: 15px; }
+.ring:nth-child(3) { animation: ring-rotate3 12s linear infinite; inset: 30px; }
+
+@keyframes ring-rotate1 { to { transform: rotateX(360deg) rotateY(180deg); } }
+@keyframes ring-rotate2 { to { transform: rotateY(360deg) rotateZ(180deg); } }
+@keyframes ring-rotate3 { to { transform: rotateZ(360deg) rotateX(180deg); } }
+
+.ring-center {
+  position: relative;
+  z-index: 1;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--bg);
+  backdrop-filter: var(--blur);
+  border: 1px solid rgba(234,234,239,0.15);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--bg-light);
+  text-decoration: none;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
+}
+
+.ring-center:hover {
+  box-shadow: var(--shadow), 0 0 30px rgba(156,246,255,0.15);
+  border-color: var(--accent);
+}
+
+/* Scroll Indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: bounce 2s infinite;
+  color: rgba(234,234,239,0.4);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
+}
+
+@media (max-width: 768px) {
+  .feature-grid { grid-template-columns: 1fr; max-width: 400px; }
+  .flip-container { width: 260px; height: 360px; }
+  .parallax-content { padding: 40px 20px; }
+}

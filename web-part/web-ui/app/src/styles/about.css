@@ -1,0 +1,96 @@
+/* === About Page (from template report.html) === */
+.about-page {
+  min-height: 100vh;
+  padding-top: var(--nav-h);
+  background: #0a0a0a;
+}
+
+.about-main {
+  max-width: 900px;
+  margin: 24px auto;
+  padding: 32px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  backdrop-filter: var(--blur);
+  box-shadow: var(--shadow);
+}
+
+.about-section {
+  margin-bottom: 32px;
+}
+
+.about-section:last-child {
+  margin-bottom: 0;
+}
+
+.about-section h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--bg-light);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(234,234,239,0.1);
+}
+
+.about-section p {
+  font-size: 14px;
+  color: rgba(234,234,239,0.7);
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+
+.about-info-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(234,234,239,0.1);
+  background: rgba(234,234,239,0.03);
+  margin-bottom: 20px;
+}
+
+.about-info-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius);
+  object-fit: cover;
+}
+
+.about-info-card h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.about-info-card p {
+  font-size: 13px;
+  color: rgba(234,234,239,0.5);
+  margin: 0;
+}
+
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.tech-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(234,234,239,0.08);
+  font-size: 13px;
+  color: rgba(234,234,239,0.7);
+}
+
+.tech-item svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .about-main { margin: 16px; padding: 20px; }
+  .tech-grid { grid-template-columns: 1fr 1fr; }
+}

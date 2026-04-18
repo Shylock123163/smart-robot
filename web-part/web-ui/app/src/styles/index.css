@@ -58,6 +58,9 @@ button { cursor: pointer; }
 }
 
 .robot-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 700;
   color: #9cf6ff;
@@ -91,8 +94,15 @@ button { cursor: pointer; }
 .metric {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
+}
+
+.metric svg {
+  flex-shrink: 0;
+  color: rgba(156, 246, 255, 0.4);
+  position: relative;
+  top: 1px;
 }
 
 .metric span {
@@ -208,13 +218,27 @@ button { cursor: pointer; }
   scrollbar-color: rgba(100, 220, 255, 0.15) transparent;
 }
 
+.icon-glow {
+  color: #4ff0d0;
+  filter: drop-shadow(0 0 4px rgba(79, 240, 208, 0.4));
+}
+
 .chat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   padding: 10px 14px;
   border-radius: 12px;
   line-height: 1.55;
   font-size: 14px;
   max-width: 85%;
   word-break: break-word;
+}
+
+.chat-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.5;
 }
 
 .chat-user {
@@ -269,14 +293,15 @@ button { cursor: pointer; }
 
 .send-btn {
   align-self: flex-end;
-  padding: 10px 20px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   border: 0;
-  background: linear-gradient(90deg, #36c6d9, #66f2d1);
+  background: linear-gradient(135deg, #36c6d9, #66f2d1);
   color: #041117;
-  font-weight: 700;
-  font-size: 14px;
-  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .send-btn:disabled {

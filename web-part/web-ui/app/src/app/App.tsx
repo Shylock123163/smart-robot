@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bot, Send, RotateCcw, Crosshair, Activity, Target } from 'lucide-react';
 import { useRobotStore } from '@/stores/robotStore';
 import { useOpenClawStatus } from '@/app/hooks/useOpenClawStatus';
 import { useOpenClawChat } from '@/app/hooks/useOpenClawChat';
@@ -44,28 +46,42 @@ export function App() {
     <div className="app-shell">
       <div className="app-bg" />
       <div className="main-layout">
-        <div className="robot-panel">
+        <motion.div
+          className="robot-panel"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <div className="robot-panel-header">
-            <div className="robot-panel-title">OpenClaw 监控室</div>
+            <div className="robot-panel-title">
+              <Bot size={16} />
+              <span>OpenClaw 监控室</span>
+            </div>
             <div className="status-bar">
               <div className="status-indicator">
                 <span className={`status-dot ${serviceStatus ? 'online' : 'offline'}`} />
                 <span>{statusError || (serviceStatus ? '已连接' : '连接中')}</span>
               </div>
               <div className="status-metrics">
-                <div className="metric"><span>阶段</span><strong>{chat.taskStage}</strong></div>
-                <div className="metric"><span>目标</span><strong>{targetLabel}</strong></div>
-                <div className="metric"><span>状态</span><strong>{chat.chatBusy ? '处理中' : '待命'}</strong></div>
+                <div className="metric"><Crosshair size={12} /><span>阶段</span><strong>{chat.taskStage}</strong></div>
+                <div className="metric"><Target size={12} /><span>目标</span><strong>{targetLabel}</strong></div>
+                <div className="metric"><Activity size={12} /><span>状态</span><strong>{chat.chatBusy ? '处理中' : '待命'}</strong></div>
               </div>
             </div>
           </div>
           <div className="scene-container">
             <ScenePanel />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="chat-panel">
+        <motion.div
+          className="chat-panel"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
           <div className="chat-header">
+            <Bot size={18} className="icon-glow" />
             <span className="chat-title">OpenClaw</span>
             <div className="chat-status">
               <span className={`status-dot ${serviceStatus ? 'online' : 'offline'}`} />
@@ -76,7 +92,9 @@ export function App() {
               <button className="mode-toggle" type="button" onClick={() => chat.setChatMode(chat.chatMode === 'assistant' ? 'control' : 'assistant')}>
                 {chat.chatMode === 'assistant' ? '助手' : '控制'}
               </button>
-              <button className="reset-btn" type="button" onClick={chat.resetSession}>重置</button>
+              <button className="reset-btn" type="button" onClick={chat.resetSession}>
+                <RotateCcw size={13} />
+              </button>
             </div>
           </div>
 
@@ -96,10 +114,10 @@ export function App() {
               }}
             />
             <button className="send-btn" type="button" onClick={handleSend} disabled={chat.chatBusy}>
-              {chat.chatBusy ? '分析中…' : '发送'}
+              <Send size={16} />
             </button>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

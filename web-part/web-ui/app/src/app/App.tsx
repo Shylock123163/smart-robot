@@ -42,9 +42,8 @@ function AnimatedRoutes() {
 }
 
 export function App() {
-  const splashDone = useSplashStore((s) => s.done);
-
-  if (!splashDone) return <SplashScreen />;
+  // const splashDone = useSplashStore((s) => s.done);
+  // if (!splashDone) return <SplashScreen />;
 
   return (
     <BrowserRouter basename="/sr">

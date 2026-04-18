@@ -10,6 +10,7 @@ const features = [
 
 export function HomePage() {
   const bgUrl = `${import.meta.env.BASE_URL}preview.jpg`;
+  const robotUrl = `${import.meta.env.BASE_URL}robot.jpg`;
 
   return (
     <div className="home">
@@ -52,7 +53,7 @@ export function HomePage() {
           <div className="flip-container">
             <div className="flip-card">
               <div className="flip-front">
-                <img src={bgUrl} alt="机器人" />
+                <img src={robotUrl} alt="机器人" />
                 <h3>暗域捕手</h3>
               </div>
               <div className="flip-back">

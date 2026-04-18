@@ -1,6 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { ContactShadows, Environment, Float, OrbitControls } from '@react-three/drei';
-import { Bloom, EffectComposer, Noise, Vignette } from '@react-three/postprocessing';
+import { Float, OrbitControls } from '@react-three/drei';
 
 function RobotBody() {
   return (
@@ -91,32 +90,35 @@ function RobotBody() {
 
 export function RobotScene() {
   return (
-    <Canvas camera={{ position: [3.6, 2.2, 3.5], fov: 35 }}>
+    <Canvas
+      camera={{ position: [3.6, 2.2, 3.5], fov: 35 }}
+      dpr={[1, 1.5]}
+      shadows={false}
+      gl={{ antialias: false, powerPreference: 'low-power' }}
+    >
       <color attach="background" args={['#071018']} />
       <fog attach="fog" args={['#071018', 5, 11]} />
-      <ambientLight intensity={1.2} />
-      <directionalLight
-        castShadow
-        intensity={2.1}
-        position={[4.5, 6, 3]}
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
+      <ambientLight intensity={1.35} />
+      <directionalLight intensity={1.8} position={[4.5, 6, 3]} />
+      <directionalLight intensity={0.6} position={[-3, 2.4, -2.5]} color="#7fe7ff" />
 
       <Float speed={1.4} rotationIntensity={0.12} floatIntensity={0.16}>
         <RobotBody />
       </Float>
 
-      <ContactShadows position={[0, -0.4, 0]} opacity={0.45} scale={7} blur={2.8} far={2.3} />
-      <Environment preset="city" />
+      <mesh position={[0, -0.42, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[3.1, 48]} />
+        <meshBasicMaterial color="#0b1921" opacity={0.92} transparent />
+      </mesh>
 
-      <EffectComposer>
-        <Bloom mipmapBlur intensity={0.45} luminanceThreshold={0.3} />
-        <Noise opacity={0.03} />
-        <Vignette eskil={false} offset={0.18} darkness={0.72} />
-      </EffectComposer>
-
-      <OrbitControls enablePan={false} minDistance={3.2} maxDistance={6.2} />
+      <OrbitControls
+        enablePan={false}
+        enableDamping={false}
+        minDistance={3.2}
+        maxDistance={6.2}
+        minPolarAngle={0.9}
+        maxPolarAngle={1.55}
+      />
     </Canvas>
   );
 }

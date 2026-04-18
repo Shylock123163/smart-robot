@@ -90,7 +90,7 @@
   background: #00e5ff;
   border-radius: 50%;
   box-shadow: 0 0 8px #00e5ff, 0 0 20px rgba(0,229,255,0.4);
-  animation: slam-robot-move 8s ease-in-out infinite;
+  animation: slam-robot-move 40s ease-in-out infinite;
 }
 
 @keyframes slam-robot-move {

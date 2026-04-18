@@ -79,15 +79,20 @@ export function MonitorPage() {
         <div className="monitor-header">{modules.find(m => m.id === active)?.label} 状态</div>
         <div className="monitor-views">
           <div className="monitor-camera">
-            <div className="camera-label"><Camera size={14} /> 摄像头 1</div>
+            <div className="camera-label"><Camera size={14} /> 摄像头图传</div>
             <div className="camera-feed">
               <video
                 className="camera-video"
                 src={`${import.meta.env.BASE_URL}camera-feed-1.mp4`}
                 autoPlay
-                loop
                 muted
                 playsInline
+                onEnded={(e) => {
+                  const v = e.currentTarget;
+                  const next = v.src.includes('camera-feed-1') ? 'camera-feed-2' : 'camera-feed-1';
+                  v.src = `${import.meta.env.BASE_URL}${next}.mp4`;
+                  v.play();
+                }}
               />
               <div className="camera-overlay">
                 <VideoOff size={32} />
@@ -95,26 +100,9 @@ export function MonitorPage() {
               </div>
             </div>
           </div>
-          <div className="monitor-camera">
-            <div className="camera-label"><Camera size={14} /> 摄像头 2</div>
-            <div className="camera-feed">
-              <video
-                className="camera-video"
-                src={`${import.meta.env.BASE_URL}camera-feed-2.mp4`}
-                autoPlay
-                loop
-                muted
-                playsInline
-              />
-              <div className="camera-overlay">
-                <VideoOff size={32} />
-                <span>等待视频源接入</span>
-              </div>
-            </div>
+          <div className="monitor-scene">
+            <SlamMapPanel />
           </div>
-        </div>
-        <div className="monitor-scene">
-          <SlamMapPanel />
         </div>
         <div className="monitor-detail">
           <table className="status-table">

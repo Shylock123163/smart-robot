@@ -1,0 +1,16 @@
+把整个 new_lable 文件夹直接上传到服务器即可。
+
+服务器建议放到:
+/home/pve-ubuntu/new_lable
+
+上传后执行:
+
+conda activate yolov8
+cd /home/pve-ubuntu/new_lable
+python server/scripts/split_dataset.py --raw-root dataset/raw --output-root dataset --val-ratio 0.2 --clean
+python server/scripts/check_dataset.py --dataset-root dataset
+python server/scripts/train_clutter_cls.py --data dataset --resume-from test1.pt --epochs 20 --imgsz 224 --batch 16 --device 0 --name clutter_cls_test2 --save-as test2.pt --export-rknn
+
+会直接得到:
+- test2.pt
+- test2_rknn_model/

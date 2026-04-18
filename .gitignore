@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.log
 
 .DS_Store
 Thumbs.db
@@ -12,3 +13,19 @@ logs/
 runs/
 
 .ipynb_checkpoints/
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Keil / STM32 build outputs
+*.o
+*.d
+*.crf
+*.lst
+*.map
+*.axf
+*.hex
+*.bin
+
+# Local legacy frontend copy kept only to avoid file-lock issues on this machine
+web-ui/

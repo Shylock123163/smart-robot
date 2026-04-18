@@ -1,0 +1,80 @@
+/**
+  ******************************************************************************
+  * @file       ws2812.h
+  * @author     Adapted from embedfire
+  * @version    V1.0
+  * @date       2026
+  * @brief      WS2812B RGB灯带驱动头文件
+  ******************************************************************************
+  */
+
+#ifndef __WS2812_H
+#define __WS2812_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "stm32f1xx_hal.h"
+#include <stdint.h>
+
+/*==============================================================================
+ * LED数量配置 - 根据实际情况修改
+ *============================================================================*/
+#ifndef LED_NUM
+    #define LED_NUM    30   // 你的灯带灯珠数量
+#endif
+
+/*==============================================================================
+ * 对外接口函数
+ *============================================================================*/
+
+/**
+  * @brief  初始化WS2812
+  */
+void WS2812_Init(void);
+
+/**
+  * @brief  发送数据到灯带（一般不需要直接调用）
+  */
+void WS2812_Send(void);
+
+/**
+  * @brief  设置所有LED为同一颜色
+  * @param  r 红色 (0-255)
+  * @param  g 绿色 (0-255)
+  * @param  b 蓝色 (0-255)
+  */
+void WS2812_SetAll(uint8_t r, uint8_t g, uint8_t b);
+
+/**
+  * @brief  设置单个LED的颜色
+  * @param  index LED索引 (0 ~ LED_NUM-1)
+  * @param  r 红色 (0-255)
+  * @param  g 绿色 (0-255)
+  * @param  b 蓝色 (0-255)
+  */
+void WS2812_SetLED(uint16_t index, uint8_t r, uint8_t g, uint8_t b);
+
+/**
+  * @brief  清空所有LED（全灭）
+  */
+void WS2812_Clear(void);
+
+/**
+  * @brief  测试函数 - 流水灯
+  * @param  delay_ms 延时（毫秒）
+  */
+void WS2812_Test_Waterfall(uint16_t delay_ms);
+
+/**
+  * @brief  测试函数 - 呼吸效果
+  * @param  cycles 呼吸次数
+  */
+void WS2812_Test_Breathe(uint8_t cycles);
+void TIM8_SwitchToWs2812(void);
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __WS2812_H */

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type SplashPhase = 'loading' | 'flying' | 'door' | 'entering' | 'done';
+type SplashPhase = 'loading' | 'door' | 'entering' | 'done';
 
 type SplashState = {
   phase: SplashPhase;

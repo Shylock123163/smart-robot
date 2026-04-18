@@ -2,13 +2,28 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: #001c54;
+  background: #0a0a0a;
   overflow: hidden;
 }
 
-.splash-canvas {
-  width: 100%;
-  height: 100%;
+.splash-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  animation: splash-zoom 8s ease-out forwards;
+  opacity: 0.7;
+}
+
+@keyframes splash-zoom {
+  from { transform: scale(1.1); opacity: 0; }
+  to { transform: scale(1); opacity: 0.7; }
+}
+
+.splash-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,20,60,0.3) 0%, rgba(0,0,0,0.85) 70%);
 }
 
 .splash-overlay {
@@ -19,42 +34,55 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  animation: splash-content-in 1s ease-out 0.3s both;
+}
+
+@keyframes splash-content-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .splash-title {
-  font-size: clamp(1.4rem, 4vw, 2.8rem);
-  font-weight: 300;
-  color: rgba(234, 234, 239, 0.9);
-  letter-spacing: 0.3em;
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 200;
+  color: rgba(234, 234, 239, 0.95);
+  letter-spacing: 0.4em;
   text-align: center;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 0 20px rgba(79, 195, 247, 0.4);
+  margin-bottom: 0.8rem;
+  text-shadow: 0 0 30px rgba(79, 195, 247, 0.4), 0 0 60px rgba(79, 195, 247, 0.15);
 }
 
 .splash-subtitle {
-  font-size: clamp(0.8rem, 2vw, 1.1rem);
+  font-size: clamp(0.85rem, 2vw, 1.2rem);
   font-weight: 300;
   color: rgba(234, 234, 239, 0.6);
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.splash-hint {
+  font-size: 0.85rem;
+  color: rgba(234, 234, 239, 0.5);
+  letter-spacing: 0.1em;
+  margin-top: 1rem;
 }
 
 .splash-loader {
-  width: 40px;
-  height: 40px;
-  border: 2px solid rgba(79, 195, 247, 0.3);
+  width: 44px;
+  height: 44px;
+  border: 2px solid rgba(79, 195, 247, 0.25);
   transform: rotate(45deg);
-  animation: splash-spin 2s linear infinite;
+  animation: splash-spin 2.5s linear infinite;
   position: relative;
 }
 
 .splash-loader::after {
   content: '';
   position: absolute;
-  inset: 3px;
-  background: rgba(79, 195, 247, 0.15);
-  animation: splash-fill 2s ease-in-out infinite;
+  inset: 4px;
+  background: rgba(79, 195, 247, 0.1);
+  animation: splash-fill 2.5s ease-in-out infinite;
 }
 
 @keyframes splash-spin {
@@ -63,36 +91,33 @@
 }
 
 @keyframes splash-fill {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.7; }
 }
 
-.splash-enter {
-  position: absolute;
-  bottom: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 1rem;
-  color: rgba(234, 234, 239, 0.85);
-  letter-spacing: 0.2em;
-  cursor: pointer;
+.splash-enter-inline {
   pointer-events: auto;
-  animation: splash-breathe 2s ease-in-out infinite;
-  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  color: rgba(234, 234, 239, 0.9);
+  letter-spacing: 0.25em;
+  cursor: pointer;
+  padding: 0.9rem 2.5rem;
   border: 1px solid rgba(79, 195, 247, 0.4);
   border-radius: 4px;
-  background: rgba(0, 28, 84, 0.5);
+  background: rgba(0, 28, 84, 0.4);
   backdrop-filter: blur(4px);
-  transition: background 0.3s, border-color 0.3s;
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+  animation: splash-breathe 2.5s ease-in-out infinite;
 }
 
-.splash-enter:hover {
+.splash-enter-inline:hover {
   background: rgba(79, 195, 247, 0.15);
   border-color: rgba(79, 195, 247, 0.7);
+  transform: scale(1.03);
 }
 
 @keyframes splash-breathe {
-  0%, 100% { opacity: 0.7; }
+  0%, 100% { opacity: 0.8; }
   50% { opacity: 1; }
 }
 
@@ -100,7 +125,7 @@
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: #ffffff;
+  background: #0a0a0a;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.6s ease-in;
@@ -110,20 +135,15 @@
   opacity: 1;
 }
 
-.splash-overlay.fade-out {
-  opacity: 0;
-  transition: opacity 0.8s ease;
-}
-
 .splash-skip {
   position: absolute;
   top: 16px;
   right: 20px;
   z-index: 10001;
   font-size: 13px;
-  color: rgba(234, 234, 239, 0.5);
+  color: rgba(234, 234, 239, 0.4);
   background: transparent;
-  border: 1px solid rgba(234, 234, 239, 0.2);
+  border: 1px solid rgba(234, 234, 239, 0.15);
   border-radius: 4px;
   padding: 4px 14px;
   cursor: pointer;

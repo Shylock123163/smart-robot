@@ -1,4 +1,4 @@
-/* === Fixed Top Navbar (from template index.html nav) === */
+/* === Fixed Top Navbar - Enhanced 3D === */
 .navbar {
   position: fixed;
   top: 0;
@@ -9,15 +9,16 @@
   align-items: center;
   height: var(--nav-h);
   padding: 0 24px;
-  background: var(--bg);
-  backdrop-filter: var(--blur);
-  border-bottom: 1px solid rgba(234,234,239,0.08);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 1px solid rgba(234,234,239,0.06);
   animation: navbar-slide-in 0.5s ease-out;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.3);
 }
 
 @keyframes navbar-slide-in {
-  from { transform: translateY(-100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(-100%) rotateX(10deg); opacity: 0; }
+  to { transform: translateY(0) rotateX(0); opacity: 1; }
 }
 
 .navbar-brand {
@@ -25,17 +26,20 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--bg-light);
-  transition: text-shadow var(--transition);
+  transition: all var(--transition);
+  text-shadow: 0 0 0 transparent;
 }
 
 .navbar-brand:hover {
-  text-shadow: 0 0 12px rgba(156,246,255,0.4);
+  text-shadow: 0 0 15px rgba(156,246,255,0.5), 0 0 30px rgba(156,246,255,0.2);
+  color: var(--accent);
 }
 
 .navbar-links {
   display: flex;
   gap: 4px;
   margin-left: auto;
+  perspective: 800px;
 }
 
 .navbar-links a {
@@ -47,7 +51,8 @@
   font-size: 13px;
   color: rgba(234,234,239,0.7);
   border-radius: var(--radius);
-  transition: var(--transition);
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
 }
 
 .navbar-links a::before {
@@ -60,9 +65,15 @@
   background: var(--accent);
   transform: scaleX(0);
   transition: transform var(--transition);
+  box-shadow: 0 0 8px rgba(156, 246, 255, 0.4);
 }
 
-.navbar-links a:hover,
+.navbar-links a:hover {
+  color: var(--bg-light);
+  transform: translateY(-1px) translateZ(5px);
+  text-shadow: 0 0 10px rgba(156, 246, 255, 0.2);
+}
+
 .navbar-links a.active {
   color: var(--bg-light);
 }
@@ -74,7 +85,7 @@
 
 .navbar-links svg { width: 14px; height: 14px; }
 
-/* === Hamburger Sidebar (from template news.html) === */
+/* === Hamburger Sidebar === */
 .hamburger {
   display: none;
   flex-direction: column;
@@ -115,11 +126,12 @@
   width: 240px;
   z-index: 99;
   padding: 24px;
-  background: var(--bg);
-  backdrop-filter: var(--blur);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(16px) saturate(180%);
   transform: translateX(-100%);
-  transition: transform var(--transition);
-  border-right: 1px solid rgba(234,234,239,0.08);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  border-right: 1px solid rgba(234,234,239,0.06);
+  box-shadow: 4px 0 30px rgba(0,0,0,0.5);
 }
 
 .sidebar-nav.open {
@@ -135,16 +147,19 @@
   font-size: 14px;
   color: rgba(234,234,239,0.7);
   border-radius: var(--radius);
-  transition: var(--transition);
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
 }
 
 .sidebar-nav a:hover,
 .sidebar-nav a.active {
   color: var(--bg-light);
-  background: rgba(234,234,239,0.06);
+  background: rgba(156, 246, 255, 0.05);
+  border-left-color: var(--accent);
+  transform: translateX(4px);
 }
 
-/* === FootNav (from template .footNav) === */
+/* === FootNav === */
 .foot-nav {
   position: fixed;
   bottom: 24px;
@@ -160,17 +175,20 @@
   height: 40px;
   border-radius: 50%;
   border: 1px solid rgba(234,234,239,0.12);
-  background: var(--bg);
-  backdrop-filter: var(--blur);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
   color: var(--bg-light);
   display: grid;
   place-items: center;
-  transition: var(--transition);
+  transition: all 0.35s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 .foot-nav button:hover {
-  background: rgba(234,234,239,0.1);
-  border-color: rgba(234,234,239,0.25);
+  background: rgba(156, 246, 255, 0.1);
+  border-color: rgba(156, 246, 255, 0.3);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 15px rgba(156, 246, 255, 0.1);
 }
 
 /* === Responsive === */

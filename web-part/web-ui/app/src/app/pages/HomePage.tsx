@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Monitor, MessageSquare, Info, ChevronDown } from 'lucide-react';
+import { TiltCard } from '@/app/components/TiltCard';
 import '@/styles/home.css';
 
 const features = [
@@ -17,14 +18,17 @@ export function HomePage() {
       {/* Hero */}
       <section className="parallax-section">
         <div className="parallax-bg" style={{ backgroundImage: `url(${bgUrl})` }} />
+        <div className="parallax-depth-layer" />
         <div className="parallax-content">
           <div className="hero-inner">
-            <h1 className="hero-title">暗域捕手</h1>
+            <div className="hero-badge">SMART TERMINAL</div>
+            <h1 className="hero-title hero-3d-text">暗域捕手</h1>
             <p className="hero-subtitle">
               基于云服务器的智能终端 — 面向床底、沙发底、柜底低矮空间的寻物取物平台
             </p>
-            <Link to="/monitor" className="feature-card" style={{ maxWidth: 240 }}>
-              进入监控室
+            <Link to="/monitor" className="hero-cta">
+              <span className="hero-cta-text">进入监控室</span>
+              <span className="hero-cta-glow" />
             </Link>
           </div>
         </div>
@@ -35,12 +39,18 @@ export function HomePage() {
       <section className="parallax-section" style={{ minHeight: 'auto', padding: '80px 0' }}>
         <div className="parallax-content">
           <div className="feature-grid">
-            {features.map(({ to, icon: Icon, title, desc }) => (
-              <Link to={to} className="feature-card" key={to}>
-                <Icon size={28} />
-                <h3>{title}</h3>
-                <p>{desc}</p>
-              </Link>
+            {features.map(({ to, icon: Icon, title, desc }, i) => (
+              <TiltCard key={to} className={`feature-card-3d delay-${i}`} intensity={12}>
+                <Link to={to} className="feature-card-inner">
+                  <div className="feature-icon-wrap">
+                    <Icon size={28} />
+                    <div className="feature-icon-ring" />
+                  </div>
+                  <h3>{title}</h3>
+                  <p>{desc}</p>
+                  <div className="feature-shine" />
+                </Link>
+              </TiltCard>
             ))}
           </div>
         </div>
@@ -49,12 +59,14 @@ export function HomePage() {
       {/* Flip Card */}
       <section className="parallax-section">
         <div className="parallax-bg" style={{ backgroundImage: `url(${bgUrl})`, backgroundPosition: 'bottom' }} />
+        <div className="parallax-depth-layer" />
         <div className="parallax-content">
           <div className="flip-container">
             <div className="flip-card">
               <div className="flip-front">
                 <img src={robotUrl} alt="机器人" />
                 <h3>暗域捕手</h3>
+                <div className="flip-front-glow" />
               </div>
               <div className="flip-back">
                 <h3>核心参数</h3>
@@ -71,11 +83,16 @@ export function HomePage() {
 
       {/* Ring Entry */}
       <section className="parallax-section ring-section">
-        <div className="ring-wrap">
-          <div className="ring" />
-          <div className="ring" />
-          <div className="ring" />
-          <Link to="/monitor" className="ring-center">进入监控室</Link>
+        <div className="ring-scene">
+          <div className="ring-wrap">
+            <div className="ring ring-glow" />
+            <div className="ring ring-glow" />
+            <div className="ring ring-glow" />
+            <Link to="/monitor" className="ring-center">
+              <span>进入监控室</span>
+              <div className="ring-center-pulse" />
+            </Link>
+          </div>
         </div>
       </section>
     </div>

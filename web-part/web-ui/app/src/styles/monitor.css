@@ -1,4 +1,4 @@
-/* === Monitor Page (from template official.html sidebar+content) === */
+/* === Monitor Page - Enhanced 3D === */
 .monitor-page {
   display: flex;
   height: 100vh;
@@ -16,10 +16,16 @@
   flex-direction: column;
   gap: 4px;
   padding: 16px 12px;
-  background: var(--bg);
-  backdrop-filter: var(--blur);
-  border-right: 1px solid rgba(234,234,239,0.08);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  border-right: 1px solid rgba(234,234,239,0.06);
   overflow-y: auto;
+  animation: sidebar-slide 0.5s ease-out;
+}
+
+@keyframes sidebar-slide {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 .monitor-sidebar-item {
@@ -33,21 +39,36 @@
   color: rgba(234,234,239,0.6);
   font-size: 13px;
   text-align: left;
-  transition: var(--transition);
+  transition: all 0.3s ease;
   width: 100%;
+  position: relative;
+  overflow: hidden;
+  border-left: 3px solid transparent;
+}
+
+.monitor-sidebar-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(156, 246, 255, 0.05) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .monitor-sidebar-item:hover {
   color: var(--bg-light);
-  background: rgba(234,234,239,0.05);
+  background: rgba(234,234,239,0.04);
+  transform: translateX(3px);
 }
+
+.monitor-sidebar-item:hover::before { opacity: 1; }
 
 .monitor-sidebar-item.active {
   color: var(--bg-light);
-  background: rgba(234,234,239,0.08);
-  transform-origin: left;
-  border-left: 3px solid var(--accent);
+  background: rgba(156, 246, 255, 0.06);
+  border-left-color: var(--accent);
   animation: sidebar-active 0.3s ease-out;
+  box-shadow: inset 4px 0 15px rgba(156, 246, 255, 0.05);
 }
 
 @keyframes sidebar-active {
@@ -59,6 +80,11 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.monitor-sidebar-item:hover svg {
+  transform: scale(1.1);
 }
 
 .monitor-content {
@@ -67,6 +93,12 @@
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  animation: content-fade 0.6s ease-out 0.2s both;
+}
+
+@keyframes content-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* Camera Feed */
@@ -100,6 +132,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border-bottom: 1px solid rgba(234,234,239,0.06);
+  background: rgba(0,0,0,0.3);
 }
 
 .camera-feed {
@@ -108,6 +141,28 @@
   background: #050505;
   min-height: 0;
   overflow: hidden;
+}
+
+/* Scan line effect on camera feed */
+.camera-feed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(156, 246, 255, 0.02) 50%,
+    transparent 100%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  animation: scan-lines 8s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes scan-lines {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(100%); }
 }
 
 .camera-video {
@@ -137,14 +192,14 @@
 .monitor-detail {
   flex-shrink: 0;
   padding: 20px 24px;
-  background: var(--bg);
-  backdrop-filter: var(--blur);
-  border-top: 1px solid rgba(234,234,239,0.08);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(234,234,239,0.06);
   max-height: 40vh;
   overflow-y: auto;
 }
 
-/* Status Table (from template official.html table) */
+/* Status Table */
 .status-table {
   width: 100%;
   border-collapse: collapse;
@@ -158,7 +213,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   border-bottom: 1px solid rgba(234,234,239,0.08);
-  background: linear-gradient(to right, var(--bg), transparent 60%);
+  background: linear-gradient(to right, rgba(0,0,0,0.4), transparent 60%);
 }
 
 .status-table td {
@@ -166,10 +221,12 @@
   font-size: 13px;
   color: var(--bg-light);
   border-bottom: 1px solid rgba(234,234,239,0.04);
+  transition: all 0.3s ease;
 }
 
 .status-table tr:hover td {
-  background: rgba(234,234,239,0.03);
+  background: rgba(156, 246, 255, 0.03);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .monitor-header {
@@ -180,7 +237,8 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(234,234,239,0.06);
-  background: var(--bg);
+  background: rgba(0,0,0,0.5);
+  text-shadow: 0 0 15px rgba(156, 246, 255, 0.2);
 }
 
 @media (max-width: 768px) {

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Monitor, MessageSquare, Info, ChevronDown } from 'lucide-react';
 import { TiltCard } from '@/app/components/TiltCard';
+import { ParticleText } from '@/app/components/ParticleText';
 import '@/styles/home.css';
 
 const features = [
@@ -22,7 +23,18 @@ export function HomePage() {
         <div className="parallax-content">
           <div className="hero-inner">
             <div className="hero-badge">SMART TERMINAL</div>
-            <h1 className="hero-title hero-3d-text">暗域捕手</h1>
+            <div className="hero-particle-wrap">
+              <ParticleText
+                text="暗域捕手"
+                fontSize={90}
+                particleSize={1.3}
+                gap={3}
+                mouseRadius={70}
+                color="#ffffff"
+                className="hero-particle-canvas"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </div>
             <p className="hero-subtitle">
               基于云服务器的智能终端 — 面向床底、沙发底、柜底低矮空间的寻物取物平台
             </p>
